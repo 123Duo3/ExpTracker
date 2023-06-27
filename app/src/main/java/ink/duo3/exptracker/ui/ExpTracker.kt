@@ -83,7 +83,7 @@ fun ExpTracker() {
                 }
                 Surface(
                     modifier = Modifier
-                        .padding(8.dp, 0.dp),
+                        .padding(start = 8.dp),
                     shape = CircleShape,
                     color = Color.Transparent
                 ){

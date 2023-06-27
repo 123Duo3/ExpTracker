@@ -5,10 +5,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.KeyboardArrowRight
 import androidx.compose.material3.Button
@@ -20,6 +22,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -58,17 +63,17 @@ fun ExpCard() {
                 )
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            CustomRow {
                 Text(
                     modifier = Modifier.weight(1f),
-                    text = "D-1-483600000000",
+                    text = "D-1-4836",
                     style = MaterialTheme.typography.displayMedium
-                                .copy(fontWeight = FontWeight.ExtraBold),
+                        .copy(fontWeight = FontWeight.ExtraBold),
                     color = MaterialTheme.colorScheme.onTertiary
                 )
 
                 Surface(
-                    modifier = Modifier.padding(start = 8.dp),
+                    modifier = Modifier.padding(vertical = 8.dp),
                     shape = MaterialTheme.shapes.medium,
                     color = MaterialTheme.colorScheme.onTertiary.copy(alpha = 0.82f)
                 ) {
@@ -176,4 +181,64 @@ fun Divider() {
 @Composable
 fun ExpCardPreview(){
     ExpCard()
+}
+
+@Composable
+fun CustomRow(
+    content: @Composable () -> Unit
+) {
+    // Retrieve the current screen density
+    val density = LocalDensity.current
+    // Convert the minimum spacing (8.dp) to pixels
+    val minSpacing = with(density) { 8.dp.roundToPx() }
+
+    Layout(
+        content = content,
+        modifier = Modifier
+    ) { measurables, constraints ->
+        // Measure each child
+        val placeables = measurables.map { measurable ->
+            measurable.measure(constraints)
+        }
+
+        // Calculate the total width of the row including the minimum spacing
+        val rowWidth = placeables.sumOf { it.width } + minSpacing
+        // Calculate the maximum height of the children
+        val height = placeables.maxByOrNull { it.height }?.height ?: 0
+
+        // Determine if we should display the elements in two lines
+        val secondLine = rowWidth > constraints.maxWidth
+
+        // Calculate the total height based on the elements' positions
+        val totalHeight = if (secondLine) {
+            placeables.sumOf { it.height }
+        } else {
+            height
+        }
+
+        layout(constraints.maxWidth, totalHeight) {
+            var xPosition = 0
+            var yPosition = 0
+
+            placeables.forEachIndexed { index, placeable ->
+                // Position the second element at the right end if the elements are in the same row
+                if (!secondLine && index == 1) {
+                    xPosition = constraints.maxWidth - placeable.width
+                }
+
+                // Calculate the vertical center for the elements when in the same row
+                val centerY = (totalHeight - placeable.height) / 2
+
+                // Place the element considering if they are in the same row or not
+                placeable.place(x = xPosition, y = if (secondLine) yPosition else centerY)
+
+                // Update the position for the next element
+                if (secondLine) {
+                    yPosition += placeable.height
+                } else if (index == 0) {
+                    xPosition += placeable.width + minSpacing
+                }
+            }
+        }
+    }
 }
